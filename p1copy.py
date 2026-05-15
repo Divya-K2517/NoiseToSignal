@@ -3,18 +3,11 @@ import numpy as np
 import matplotlib
 import math
 
-#softmax function
-#exponentiate - gets rids of negatives but keeps the differentatitation between -9 and 9 for example
-#normalize
+#using this file to test and learn
+softmax_outputs = np.array([[0.7,0.1,0.2],
+                 [0.1,0.5,0.4],
+                  [0.02,0.9,0.08]])
+class_targets = [0,1,1]
 
-layer_outputs = [[4.8,1.21,2.385],
-                 [8.9,-1.81,0.2],
-                 [1.41,1.051,0.026]]
-
-exp_values = np.exp(layer_outputs)
-
-
-norm_values = exp_values / np.sum(exp_values, axis=1, keepdims=True)
-
-print(norm_values)
+neg_log = -np.log(softmax_outputs[range(len(softmax_outputs)), class_targets])
 
