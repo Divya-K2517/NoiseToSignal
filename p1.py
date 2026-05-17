@@ -163,12 +163,31 @@ accuracy = accuracy(activation3.output, y_batch)
 #and then see if loss decreases
 #^^^ but even this is not optimal for more complex datasets
 
+#BACKPROPAGATION
 #for each weight and bias, we can also change only one at a time and calculate the resulting loss
 
+#the magnitude of the change in loss will be the gradient of the loss with respect to that weight or bias
+#this tells us how sensitive the loss is to changes in that weight or bias
+
+#ex:
+    #if we are looking at an example of 2, our inital predictions will be pretty spread out across all 10 classes
+    #the goal would be to increase the activation of the 2nd neuron in the output layer, and decrease the activation of all other neurons in the output layer
+    #remember the activation is reLU(dot product of inputs(outputs from previous layer) and weights (for that layer) + bias)
+    #we should increase weights in proportion to activations, so if a neuron has a higher activation increase weights more?
+
+#^^^^continuing from the above example
+#the desire of the 2 example for how the activations should change may be one number
+#we add up the desires of all the other neurons in that output layer(which all want to be less active bc they ae not 2)
+#now after back propagating through all the layers, we know what the 2 wants for each weight
+#then average the desired changes for each weight across all 10 classes to get the desired change for each weight
+
+#^^that process takes a long time for computers, so:
+#divide training data into mini-batches and do backprop for each batch
+#what next?
 
 #DISPLAYING OUTPUTS
 print(f"\n── Forward pass on {BATCH_SIZE} samples ──")
-print(f"Loss:     {loss:.4f}   (random init baseline ≈ {np.log(10):.4f})")
+print(f"Loss:     {loss:.4f}    This means {np.exp(-loss):.4f} is the probability of being correct  (random init baseline ≈ {np.log(10):.4f})")
 print(f"Accuracy: {accuracy*100:.1f}%  (random init baseline ≈ 10%)")
 print(f"\nFirst 5 predictions:")
 for i in range(5):
