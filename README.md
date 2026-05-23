@@ -37,21 +37,21 @@ Before training, the images were flattened. This means instead of a 2D array of 
 This network has three layers, with ReLU activation on the hidden layers and Softmax activation on the output. 
 
 Input(784 values) <br>
-      🡣 <br>
+&emsp🡣 <br>
 Hidden Layer 1 -- 128 neurons, ReLU activation <br>
-      🡣 <br>
+&emsp🡣 <br>
 Hidden Layer 2 -- 64 neurons, ReLU activation <br>
-      🡣 <br>
+&emsp🡣 <br>
  Output Layer 3 -- 10 neurons, Softmax activation <br>
-      🡣 <br>
+&emsp🡣 <br>
     Output -- a probability distribution over 10 classes for each example <br>
 
-The weights are initialized randomly through He initialization, which is where weights are taken from a normal distrubution that is scaled by $\sqrt{$\frac{2}{n_inputs}$}$. This type of intialization is specifically good for ReLU activations because it prevents vanishing or exploding gradients during training. In other words, this helps keep values flowing through the network without shrinking to 0 or excessivly growing after going through lots of forward/backward passes. The biases are all initialized to 0. 
+The weights are initialized randomly through He initialization, which is where weights are taken from a normal distrubution that is scaled by $\sqrt{\frac{2}{n_inputs}}$. This type of intialization is specifically good for ReLU activations because it prevents vanishing or exploding gradients during training. In other words, this helps keep values flowing through the network without shrinking to 0 or excessivly growing after going through lots of forward/backward passes. The biases are all initialized to 0. 
 
 <ins>Forward Pass</ins> <br>
 Each neuron does this computation: output_of_neuron = input\*weight + bias. Another way to represent this is through matrix multiplication. If we combine all the inputs, weights, and biases for a specific layer into matrices, we can do output_of_layer = inputs_matrix\*weights_matrix + biases matrix. Note that the inputs_matrix and weights_matrix are matrix multiplied(not the same as regular multiplication).
 
-The *ReLU* activation function is applied after each hidden layer: ReLU(x) = max(0,x)
+The *ReLU* activation function is applied after each hidden layer: ReLU(x) = max(0,x) <br>
 The *Softmax* activation function is applied to the output layer: Softmax(x) = $\frac{$e^x$}{sum_of_$e^y$_for_each_output_of_that_layer}$
 Softmax activation prevents numerical overflow by subtracting the minimum value of a set of inputs(these inputs to the softmax function are the outputs of a whole layer) from all values in the set.
 
@@ -59,6 +59,6 @@ Softmax activation prevents numerical overflow by subtracting the minimum value 
 
 
 References:
-[https://github.com/zalandoresearch/fashion-mnist](https://github.com/zalandoresearch/fashion-mnist)
-[https://towardsdatascience.com/kaiming-he-initialization-in-neural-networks-math-proof-73b9a0d845c4/](https://towardsdatascience.com/kaiming-he-initialization-in-neural-networks-math-proof-73b9a0d845c4/)
-[https://www.geeksforgeeks.org/deep-learning/the-role-of-softmax-in-neural-networks-detailed-explanation-and-applications/](https://www.geeksforgeeks.org/deep-learning/the-role-of-softmax-in-neural-networks-detailed-explanation-and-applications/)
+[https://github.com/zalandoresearch/fashion-mnist](https://github.com/zalandoresearch/fashion-mnist) <br>
+[https://towardsdatascience.com/kaiming-he-initialization-in-neural-networks-math-proof-73b9a0d845c4/](https://towardsdatascience.com/kaiming-he-initialization-in-neural-networks-math-proof-73b9a0d845c4/) <br>
+[https://www.geeksforgeeks.org/deep-learning/the-role-of-softmax-in-neural-networks-detailed-explanation-and-applications/](https://www.geeksforgeeks.org/deep-learning/the-role-of-softmax-in-neural-networks-detailed-explanation-and-applications/) <br>
