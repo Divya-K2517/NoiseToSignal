@@ -52,7 +52,7 @@ The weights are initialized randomly through He initialization, which is where w
 Each neuron does this computation: output_of_neuron = input\*weight + bias. Another way to represent this is through matrix multiplication. If we combine all the inputs, weights, and biases for a specific layer into matrices, we can do output_of_layer = inputs_matrix\*weights_matrix + biases matrix. Note that the inputs_matrix and weights_matrix are matrix multiplied(not the same as regular multiplication).
 
 The *ReLU* activation function is applied after each hidden layer: ReLU(x) = max(0,x) <br>
-The *Softmax* activation function is applied to the output layer: Softmax(x) = $\frac{e^x}{\text{sum of e^y for each output of that layer}}$
+The *Softmax* activation function is applied to the output layer: Softmax(x) = $\frac{e^x}{\text{sum of e**y for each output of that layer}}$
 Softmax activation prevents numerical overflow by subtracting the minimum value of a set of inputs(these inputs to the softmax function are the outputs of a whole layer) from all values in the set.
 
 <ins>Loss</ins> <br>
