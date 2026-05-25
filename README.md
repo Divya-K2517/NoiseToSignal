@@ -52,8 +52,8 @@ The weights are initialized randomly through He initialization, which is where w
 <ins>Forward Pass</ins> <br>
 Each neuron does this computation: output_of_neuron = input\*weight + bias. Another way to represent this is through matrix multiplication. If we combine all the inputs, weights, and biases for a specific layer into matrices, we can do output_of_layer = inputs_matrix\*weights_matrix + biases matrix. Note that the inputs_matrix and weights_matrix are matrix multiplied(not the same as regular multiplication).
 
-The *ReLU* activation function is applied after each hidden layer: ReLU(x) = max(0,x) <br>
-The *Softmax* activation function is applied to the output layer: Softmax(x) = $\frac{e^x}{\text{sum of e**y for each output of that layer}}$
+The *ReLU* activation function is applied after each hidden layer: $ReLU(x) = max(0,x)$ <br>
+The *Softmax* activation function is applied to the output layer: $Softmax(x) = \frac{e^x}{\text{sum of e**y for each output of that layer}}$
 Softmax activation prevents numerical overflow by subtracting the minimum value of a set of inputs(these inputs to the softmax function are the outputs of a whole layer) from all values in the set.
 
 <ins>Loss</ins> <br>
@@ -63,7 +63,15 @@ Lets break this down:
 * each training example has its own loss
 * one_hot[i] refers to the one-hot encoding for a certain class, where the other classes are 0 and the correct class is 1. For example, the one-hot encoding for class 2 would be: [0,0,1,0,0,0,0,0,0,0]
 * prediction[i] is the vector of how likely an example is of a certain class.
-* thanks to the one-hot encoding multiplying all wrong classes by 0, what we are essentially doing is: -log(prediction_probability_for_correct_class)
+* thanks to the one-hot encoding multiplying all wrong classes by 0, what we are essentially doing is: $-log(prediction_probability_for_correct_class)$
+
+<ins>Backpropagation</ins> <br>
+Backpropagation is the process of going backwards through the network(starting from output layer to the inputs) and computing how much each weight and bias contribute to the loss (here we use Categorical Cross-Entropy Loss. By doing this, we get an idea of how to tweak that weight/bias in order to minimize loss. <br>
+At the core of this process is the chain rule. Remember that for a single layer, $z = Wx + b$, where $z$ is output, $W$ is weight, $x$ is input, and $b$ is bias. We then apply the activation function and calculate loss. What is we want to know is $\frac{dL}{dW}$ - how much will loss change if we change a specific weight? Thanks to the chain rule that expression can be broken down into: $\frac{dL}{dW} = \frac{dL}{da} \* \frac{da}{dz} \* \frac{dz}{dW}$.  $\frac{dL}{da}$ is how the activation affects the loss, $\frac{da}{dz}$ is how the activation changes in response to the input, and $\frac{dz}{dW}$ is how the weights affect the output. With $\frac{dL}{dW}$, we can then do $new_weight = old_weight + (learning_rate)\frac{dL}{da}$. Each class has a backward() method that implements this backpropagation process.  <br>
+For the Softmax activation and Cross-Entropy Loss, the gradient simplifies to $gradient = output_prediction - output_true$. This is essentially the same as $predicted probability - 1$. This tells the network to push the correct class's probability to 1 and others to 0.<br>
+The ReLU function backwards ends up as a step function. Recall that $ReLU(x) = max(x,0)$, so $\frac{d_ReLU}{dx} = 1$ if $x > 0$, or 0 otherwise. When going backwards, this means any neuron that was inactive during forward pass (thanks to ReLU) is zeroed out. <br>
+For each layer, 3 calculations are done to update the weights, biases, and send to the previous layer how much the inputs affected the loss. The gradient for the weights was $d_weights = inputs.T \* d_values$. We take the transpose of inputs and matrix multiply by d_values, the measure of how much the ouputs to the current layer affect the loss. The gradient for the biases is $d_biases = sum(d_values, axis=0)$, or in other words just the sum of how much each neuron output contributed to the loss. The gradient of the inputs is $d_inputs = d_values \* weights.T$, or d_values matrix multiplyed by the transpose of the weights.
+
 
 
 
@@ -73,3 +81,4 @@ References: <br>
 [https://towardsdatascience.com/kaiming-he-initialization-in-neural-networks-math-proof-73b9a0d845c4/](https://towardsdatascience.com/kaiming-he-initialization-in-neural-networks-math-proof-73b9a0d845c4/) <br>
 [https://www.geeksforgeeks.org/deep-learning/the-role-of-softmax-in-neural-networks-detailed-explanation-and-applications/](https://www.geeksforgeeks.org/deep-learning/the-role-of-softmax-in-neural-networks-detailed-explanation-and-applications/) <br>
 [https://www.geeksforgeeks.org/deep-learning/categorical-cross-entropy-in-multi-class-classification/](https://www.geeksforgeeks.org/deep-learning/categorical-cross-entropy-in-multi-class-classification/) <br>
+[https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/](https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/)<br>
