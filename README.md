@@ -57,13 +57,13 @@ The *Softmax* activation function is applied to the output layer: $Softmax(x) = 
 Softmax activation prevents numerical overflow by subtracting the minimum value of a set of inputs(these inputs to the softmax function are the outputs of a whole layer) from all values in the set.
 
 <ins>Loss</ins> <br>
-The network trains using *Categorical Cross-Entropy* loss: loss = -(one_hot[i]*log(prediction[i])) for i in range (0, num_classes)<br>
+The network trains using *Categorical Cross-Entropy* loss: loss = -(oneHot[i]*log(prediction[i])) for i in range (0, numClasses)<br>
 
 Lets break this down: 
 * each training example has its own loss
 * one_hot[i] refers to the one-hot encoding for a certain class, where the other classes are 0 and the correct class is 1. For example, the one-hot encoding for class 2 would be: [0,0,1,0,0,0,0,0,0,0]
 * prediction[i] is the vector of how likely an example is of a certain class.
-* thanks to the one-hot encoding multiplying all wrong classes by 0, what we are essentially doing is: $-log(prediction_probability_for_correct_class)$
+* thanks to the one-hot encoding multiplying all wrong classes by 0, what we are essentially doing is: $-log(predictionProbabilityForCorrectClass)$
 
 <ins>Backpropagation</ins> <br>
 Backpropagation is the process of going backwards through the network(starting from output layer to the inputs) and computing how much each weight and bias contribute to the loss (here we use Categorical Cross-Entropy Loss. By doing this, we get an idea of how to tweak that weight/bias in order to minimize loss. <br>
