@@ -1,5 +1,7 @@
 **End-to-End Neural Network Implementation in Python**<br>
-**readme currently unfinished**
+![Python](https://img.shields.io/badge/Python-3.x-blue)
+![NumPy](https://img.shields.io/badge/NumPy-only-green)
+![Accuracy](https://img.shields.io/badge/Test%20Accuracy-84%25-brightgreen)
 
 A completely connected neural network built using only NumPy and trained on the Fashion MNIST dataset. Every forward/backward pass, gradient, and weight update is done by hand without external libraries or functions, including the backpropagation alogrithim itself. 
 
@@ -37,17 +39,12 @@ Before training, the images were flattened. This means instead of a 2D array of 
 ## Network Architecture
 This network has three layers, with ReLU activation on the hidden layers and Softmax activation on the output. 
 
-```text
-Input(784 values) <br>
-    🡣
-Hidden Layer 1 -- 128 neurons, ReLU activation
-    🡣
-Hidden Layer 2 -- 64 neurons, ReLU activation
-    🡣
- Output Layer 3 -- 10 neurons, Softmax activation
-    🡣
-    Output -- a probability distribution over 10 classes for each example 
-```
+| Layer | Size | Activation |
+|-------|------|------------|
+| Input | 784 | — |
+| Hidden 1 | 128 neurons | ReLU |
+| Hidden 2 | 64 neurons | ReLU |
+| Output | 10 neurons | Softmax |
 
 The weights are initialized randomly through He initialization, which is where weights are taken from a normal distrubution that is scaled by $\sqrt{\frac{2}{n_inputs}}$. This type of intialization is specifically good for ReLU activations because it prevents vanishing or exploding gradients during training. In other words, this helps keep values flowing through the network without shrinking to 0 or excessivly growing after going through lots of forward/backward passes. The biases are all initialized to 0. 
 
@@ -59,7 +56,7 @@ The *Softmax* activation function is applied to the output layer: $$Softmax(x) =
 Softmax activation prevents numerical overflow by subtracting the minimum value of a set of inputs(these inputs to the softmax function are the outputs of a whole layer) from all values in the set.
 
 ## Loss
-The network trains using *Categorical Cross-Entropy* loss:  $$loss = -(oneHot[i]*log(prediction[i])) for i in range (0, numClasses)$$ <br>
+The network trains using *Categorical Cross-Entropy* loss:  $$\mathcal{L} = -\sum_{i} y_i \log(\hat{y}_i)$$ <br>
 
 Lets break this down: 
 * each training example has its own loss
@@ -88,30 +85,30 @@ These equations move the weights/biases in the opposite direction of the gradien
 The learning rate is important because if it is too large, the updates will be an overshoot. Too small and the training will be very slow. 
 
 ## Traning Loop
-    The training is done in 20 epochs. Each epoch shuffles the training data and splits the training data into batches of 256 samples (for a total of 234 batches per epoch). Then, for each batch, we run the forward pass, compute loss and accuracy, run the backward pass, and then call the optimizer to update weights. 
+The training is done in 20 epochs. Each epoch shuffles the training data and splits the training data into batches of 256 samples (for a total of 234 batches per epoch). Then, for each batch, we run the forward pass, compute loss and accuracy, run the backward pass, and then call the optimizer to update weights. 
 
 ## Results
 ```text
-Epoch  1/20  loss: 1.3488  acc: 57.9% <br>
-Epoch  2/20  loss: 0.7752  acc: 74.6% <br>
-Epoch  3/20  loss: 0.6528  acc: 78.3% <br>
-Epoch  4/20  loss: 0.5940  acc: 80.1% <br>
-Epoch  5/20  loss: 0.5584  acc: 81.2% <br>
-Epoch  6/20  loss: 0.5336  acc: 81.9% <br>
-Epoch  7/20  loss: 0.5143  acc: 82.5% <br>
-Epoch  8/20  loss: 0.4987  acc: 83.0% <br>
-Epoch  9/20  loss: 0.4870  acc: 83.3% <br>
-Epoch 10/20  loss: 0.4759  acc: 83.7% <br>
-Epoch 11/20  loss: 0.4670  acc: 84.0% <br>
-Epoch 12/20  loss: 0.4590  acc: 84.2% <br>
-Epoch 13/20  loss: 0.4512  acc: 84.5% <br>
-Epoch 14/20  loss: 0.4451  acc: 84.7% <br>
-Epoch 15/20  loss: 0.4394  acc: 84.9% <br>
-Epoch 16/20  loss: 0.4342  acc: 85.0% <br>
-Epoch 17/20  loss: 0.4291  acc: 85.2% <br>
-Epoch 18/20  loss: 0.4246  acc: 85.3% <br>
-Epoch 19/20  loss: 0.4204  acc: 85.4% <br>
-Epoch 20/20  loss: 0.4163  acc: 85.6% <br>
+Epoch  1/20  loss: 1.3488  acc: 57.9% 
+Epoch  2/20  loss: 0.7752  acc: 74.6% 
+Epoch  3/20  loss: 0.6528  acc: 78.3% 
+Epoch  4/20  loss: 0.5940  acc: 80.1% 
+Epoch  5/20  loss: 0.5584  acc: 81.2% 
+Epoch  6/20  loss: 0.5336  acc: 81.9% 
+Epoch  7/20  loss: 0.5143  acc: 82.5% 
+Epoch  8/20  loss: 0.4987  acc: 83.0% 
+Epoch  9/20  loss: 0.4870  acc: 83.3% 
+Epoch 10/20  loss: 0.4759  acc: 83.7% 
+Epoch 11/20  loss: 0.4670  acc: 84.0% 
+Epoch 12/20  loss: 0.4590  acc: 84.2% 
+Epoch 13/20  loss: 0.4512  acc: 84.5%
+Epoch 14/20  loss: 0.4451  acc: 84.7% 
+Epoch 15/20  loss: 0.4394  acc: 84.9%
+Epoch 16/20  loss: 0.4342  acc: 85.0% 
+Epoch 17/20  loss: 0.4291  acc: 85.2% 
+Epoch 18/20  loss: 0.4246  acc: 85.3%
+Epoch 19/20  loss: 0.4204  acc: 85.4% 
+Epoch 20/20  loss: 0.4163  acc: 85.6% 
 
 ── Test set evaluation ── <br>
 Loss:     0.4536 <br>
@@ -125,4 +122,4 @@ References: <br>
 [https://www.geeksforgeeks.org/deep-learning/the-role-of-softmax-in-neural-networks-detailed-explanation-and-applications/](https://www.geeksforgeeks.org/deep-learning/the-role-of-softmax-in-neural-networks-detailed-explanation-and-applications/) <br>
 [https://www.geeksforgeeks.org/deep-learning/categorical-cross-entropy-in-multi-class-classification/](https://www.geeksforgeeks.org/deep-learning/categorical-cross-entropy-in-multi-class-classification/) <br>
 [https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/](https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/)<br>
-(https://github.com/Sentdex/nnfs)[https://github.com/Sentdex/nnfs]<br>
+[https://github.com/Sentdex/nnfs](https://github.com/Sentdex/nnfs)<br>
