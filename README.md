@@ -8,14 +8,14 @@ A completely connected neural network built using only NumPy and trained on the 
 Starting from random weights, the model reaches 85.6% training accuracy and 84.0% test accuracy.
 
 ## Table of Contents
-- Dataset
-- Network Architecture
-- Forward Pass
-- Loss Function
-- Backpropagation
-- Optimizer
-- Training Loop
-- Results
+Dataset
+Network Architecture
+Forward Pass
+Loss Function
+Backpropagation
+Optimizer
+Training Loop
+Results
 
 ## 👗 Dataset
 The network is currently trained on the Fashion MNIST dataset, which is a replacement for the classic MNIST (handwritten digits) dataset. It is a collection of 70,000 total images of clothing articles, each belonging to one of 10 classes. The images have the same structure as MNIST: grayscale and 28x28 pixels. These are the 10 classes: 
