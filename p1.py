@@ -24,11 +24,13 @@ class Layer_Dense:
         self.inputs = inputs #save the inputs for backpropagation
         self.output = np.dot(inputs, self.weights) + self.biases
     
-    def backward(self, dvalues):
+    def backward(self, dvalues, l2_lambda=0.001):
         #dvalues is the gradient of the loss with respect to the output of this layer, which is also the input to the next layer
         
         #gradient of the loss with respect to the weights
-        self.dweights = np.dot(self.inputs.T, dvalues) 
+        #2 * l2_lambda * self.weights adds the L2 penalty term, pushing large weights downward during training
+        #by discoraging very large weights we help prevent overfitting
+        self.dweights = np.dot(self.inputs.T, dvalues) + 2 * l2_lambda * self.weights
         #gradient of the loss with respect to the biases
         self.dbiases = np.sum(dvalues, axis=0, keepdims=True) 
         #gradient of the loss with respect to the inputs of this layer, which is also the output of the previous layer
@@ -44,6 +46,15 @@ class Activation_ReLU:
         #if input value is less than or equal to 0, set the gradient to 0, otherwise keep it the same
         self.dinputs = dvalues.copy() #copy the values of dvalues so we can modify them without affecting the original array
         self.dinputs[self.inputs <= 0] = 0
+class Activation_LeakyReLU: 
+    def __init__(self, alpha=0.01):
+        self.alpha = 0.01
+    def forward(self, inputs):
+        self.inputs = inputs
+        self.output = np.where(inputs > 0, inputs, self.alpha * inputs)
+    def backward(self, dvalues):
+        self.dinputs = dvalues.copy()
+        self.dinputs[self.inputs <= 0] *= self.alpha
 
 class Activation_Softmax:
     def forward(self, inputs):
@@ -181,12 +192,37 @@ class Optimizer_Adam:
         #update weights and biases
         layer.weights -= self.learning_rate * m_w / (np.sqrt(v_w) + self.epsilon) #doing - to move in the direction of the negative gradient, which is the direction of steepest descent
         layer.biases  -= self.learning_rate * m_b / (np.sqrt(v_b) + self.epsilon)
+class Layer_Dropout:
+    #during training, this will randomly turn off some of the inputs
+    #in other words, during training(forward and backward) some neurons are essentially ignored
+    #this helps prevent the model from just memorizing the training set instead of actually learning
+    def __init__(self, rate):
+        self.rate=rate
+    def forward(self, inputs, training=True):
+        self.inputs = inputs
+        if not training:
+            self.output = inputs.copy()
+            return
+        #random mask of 0s and 1s
+        #each neuron is kept with the probability of 1-rate
+        
+        self.mask = np.random.binomial(1, 1 - self.rate, size=inputs.shape) / (1 - self.rate)
+        self.output = inputs * self.mask
+    def backward(self, dvalues):
+        self.dinputs = dvalues * self.mask
+
 
 def compute_accuracy(predictions, y_true):
     #fraction of samples where argmax prediction matches the true label
     predicted_labels = np.argmax(predictions, axis=1)
     return np.mean(predicted_labels == y_true)
-
+def clip_gradients(layer, max_norm=5.0):
+    #will scale down gradients if they are too large
+    norm = np.sqrt(np.sum(layer.dweights**2) + np.sum(layer.dbiases**2))
+    if norm > max_norm:
+        scale = max_norm / norm
+        layer.dweights *= scale
+        layer.dbiases *= scale
 
 (X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
 #dataset: https://github.com/zalandoresearch/fashion-mnist
