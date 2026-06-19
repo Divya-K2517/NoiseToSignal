@@ -8,17 +8,22 @@ A completely connected neural network built using only NumPy and trained on the 
 Starting from random weights, the model reaches 85.6% training accuracy and 84.0% test accuracy.
 
 ## Table of Contents
-**Dataset** <br>
+**Datasets** <br>
 **Network Architecture**<br>
 **Forward Pass**<br>
 **Loss Function**<br>
 **Backpropagation**<br>
 **Optimizer**<br>
+**Regularization** <br>
+**Gradient Clipping** <br>
 **Training Loop**<br>
 **Results**<br>
 
 ## 👗 Dataset
-The network is currently trained on the Fashion MNIST dataset, which is a replacement for the classic MNIST (handwritten digits) dataset. It is a collection of 70,000 total images of clothing articles, each belonging to one of 10 classes. The images have the same structure as MNIST: grayscale and 28x28 pixels. These are the 10 classes: 
+The network was tested on two datasets: Fashion MNIST(a replacement for the classic MNIST handwritten digits), and NSL-KDD(an improved version of the KDD'99 set which categorizes network intrusions).
+
+### Fashion MNIST
+Fashion MNIST dataset is a collection of 70,000 total images of clothing articles, each belonging to one of 10 classes. The images have the same structure as MNIST: grayscale and 28x28 pixels. These are the 10 classes: 
 
 
 | Label | Class |
@@ -34,26 +39,41 @@ The network is currently trained on the Fashion MNIST dataset, which is a replac
 | 8 | Bag |
 | 9 | Ankle boot |
 
-Before training, the images were flattened. This means instead of a 2D array of 28x28, they were reshaped into a 1D array of 784 values. This makes it easier for the network's layers to consume data, and doesn't have any negative effect either. The image arrays were also normalized. This is the process of converting values to be between a range of [0.0, 1.0]. Orignally, since this dataset consists of images, the values for each example were between [0, 255]. Normalization keeps the inputes small and prevents erractic weight updates or unnesscary complexity later on during training. 
+Before training, the images were flattened. This means instead of a 2D array of 28x28, they were reshaped into a 1D array of 784 values. This makes it easier for the network's layers to consume data, and doesn't have any negative effect either. The image arrays were also normalized. This is the process of converting values to be between a range of [0.0, 1.0]. Orignally, since this dataset consists of images, the values for each example were between [0, 255]. Normalization keeps the inputes small and prevents erractic weight updates or unnesscary complexity later on during training.
+
+### NSL-KDD (Network Intrusion Detection)
+NSL-KDD is a tabular dataset, containing ~125,000 training and ~22,000 test records/rows with 41 features per record. There are 38 numeric columns, and 3 categorical text columns. The 3 text columns were one-hot encoded, and the other 38 were scaled to a range of [0,1]. These records are grouped into 22 specific types of attacks, but these can be collapsed into 5 broad categories. These are the 5 classes: 
+
+| Label | Class | Description |
+| ------------- | ------------- | ------------- |
+| 0 | normal | actual traffic |
+| 1 | dos | denial of service |
+| 2 | probe | surveillance/scanning |
+| 3 | r2l | remote-to-local exploit |
+| 4 | u2r | user-to-root exploit |
+ 
 
 ## 🕸️ Network Architecture
-This network has three layers, with ReLU activation on the hidden layers and Softmax activation on the output. 
+This network has three layers, with activation functions on the hidden layers and Softmax activation on the output. The sizes of each layer vary by dataset.
 
-| Layer | Size | Activation |
-|-------|------|------------|
-| Input | 784 | — |
-| Hidden 1 | 128 neurons | ReLU |
-| Hidden 2 | 64 neurons | ReLU |
-| Output | 10 neurons | Softmax |
+| Layer | Fashion MNIST Size | NSL-KDD Size | Activation |
+|-------|------|------|------------|
+| Input | 784 | 122 (38 numeric, 84 one-hot) | — |
+| Hidden 1 | 128 neurons | 128 neurons | ReLU/LeakyReLU |
+| Hidden 2 | 64 neurons | 64 neurons | ReLU/LeakyReLU |
+| Output | 10 neurons | 5 neurons | Softmax |
 
 The weights are initialized randomly through He initialization, which is where weights are taken from a normal distrubution that is scaled by $\sqrt{\frac{2}{n_inputs}}$. This type of intialization is specifically good for ReLU activations because it prevents vanishing or exploding gradients during training. In other words, this helps keep values flowing through the network without shrinking to 0 or excessivly growing after going through lots of forward/backward passes. The biases are all initialized to 0. 
 
 ## ➡️ Forward Pass
 Each neuron does this computation: $$outputOfNeuron = input\*weight + bias $$. Another way to represent this is through matrix multiplication. If we combine all the inputs, weights, and biases for a specific layer into matrices, we can do $$outputOfLayer = inputsMatrix\*weightsMatrix + biasesMatrix$$. Note that the inputsMatrix and weightsMatrix are matrix multiplied(not the same as regular multiplication).
 
-The *ReLU* activation function is applied after each hidden layer: $$ReLU(x) = max(0,x)$$<br> 
+The *ReLU* activation function is applied after each hidden layer for the Fashion MNIST dataset: $$ReLU(x) = max(0,x)$$<br> 
+The *Leaky ReLU* activation function is applied afer each hidden layer for the NSL-KDD dataset: $$\text{LeakyReLU}(x) = \begin{cases} x & x > 0 \\ 0.01x & x \le 0 \end{cases}$$ <br>
+Leaky ReLU was used to avoid the dying ReLU problem, which is when neurons using ReLU activation die out and remain at 0 in repsonse to a negative input. Leaky ReLU avoids this by giving a small non-zero gradient to negative inputs.
 The *Softmax* activation function is applied to the output layer: $$Softmax(x) = \frac{e^x}{\text{sum of e**y for each output of that layer}}$$ <br>
 Softmax activation prevents numerical overflow by subtracting the minimum value of a set of inputs(these inputs to the softmax function are the outputs of a whole layer) from all values in the set.
+
 
 ## 📉 Loss
 The network trains using *Categorical Cross-Entropy* loss:  $$\mathcal{L} = -\sum_{i} y_i \log(\hat{y}_i)$$ <br>
@@ -71,12 +91,14 @@ At the core of this process is the chain rule. Remember that for a single layer,
 
 For the Softmax activation and Cross-Entropy Loss, the gradient simplifies to $gradient = output_prediction - output_true$. This is essentially the same as $predicted probability - 1$. This tells the network to push the correct class's probability to 1 and others to 0.<br>
 
-The ReLU function backwards ends up as a step function. Recall that $ReLU(x) = max(x,0)$, so $\frac{d_ReLU}{dx} = 1$ if $x > 0$, or 0 otherwise. When going backwards, this means any neuron that was inactive during forward pass (thanks to ReLU) is zeroed out. <br>
+The ReLU function backwards ends up as a step function. Recall that $ReLU(x) = max(x,0)$, so $\frac{d_ReLU}{dx} = 1$ if $x > 0$, or 0 otherwise. When going backwards, this means any neuron that was inactive during forward pass (thanks to ReLU) is zeroed out. For Leaky ReLU, the negative branch creates a small gradient of $0.01$ instead of $0$, preventing neurons from getting stuck at an output of 0.<br>
 
 For each layer, 3 calculations are done to update the weights, biases, and send to the previous layer how much the inputs affected the loss. The gradient for the weights was $dWeights = inputs.T \* dValues$. We take the transpose of inputs and matrix multiply by dValues, the measure of how much the ouputs to the current layer affect the loss. The gradient for the biases is $dBiases = sum(dValues, axis=0)$, or in other words just the sum of how much each neuron output contributed to the loss. The gradient of the inputs is $dInputs = dValues \* weights.T$, or dValues matrix multiplyed by the transpose of the weights. 
 
 ## 🔨Optimizer
-The Optimizer is used during backpropagation to change the weights and biases. Here, the Stochastic Gradient Descent Optimizer(SGD) with a learning rate of 0.01. After the backpropagation step computes the gradients (how much the loss changes in response to weights, biases, and inputs), the optimizer applies these rules to every layer: <br>
+
+### SGD (Stochastic Gradient Descent)
+SGD is used for Fashion MNIST with a learning rate of 0.01. After the backpropagation step computes the gradients (how much the loss changes in response to weights, biases, and inputs), the optimizer applies these rules to every layer: <br>
 $$weights = weights - (learningRate \* dweights) $$ <br>
 $$biases = biases - (learningRate \* dbiases) $$ <br>
 
@@ -84,10 +106,38 @@ These equations move the weights/biases in the opposite direction of the gradien
 
 The learning rate is important because if it is too large, the updates will be an overshoot. Too small and the training will be very slow. 
 
+### Adam (Adaptive Moment Estimation)
+Adam is used for the NSL-KDD dataset. Instead of a fixed learning rate, Adam tracks two running averages per weight: 
+- $m$ — an exponential moving average of past gradients (momentum): $m = \beta_1 m + (1 - \beta_1) \cdot dW$ <br>
+- $v$ — an exponential moving average of past squared gradients: $v = \beta_2 v + (1 - \beta_2) \cdot dW^2$ <br>
+Additionally, they are both bias-corrected to compensate for being initialized at zero:
+$$\hat{m} = \frac{m}{1 - \beta_1^t} \quad \quad \hat{v} = \frac{v}{1 - \beta_2^t}$$ <br>
+The update then divides by $\sqrt{\hat{v}}$, giving each weight its own effective learning rate:
+$$W = W - \eta \cdot \frac{\hat{m}}{\sqrt{\hat{v}} + \epsilon}$$ <br>
+
+Here, weights with large and consistent gradients take smaller steps whereas weights with small and infrequent gradients take larger steps. This leads to faster and more stable convergence than SGD, especially on datasets with varied feature scales like NSL-KDD.
+
+## 🛡️Regularization 
+During training, each neuron's output was ranomly zeroed out with probability `rate`. The surviving outputs are scaled up by $\frac{1}{1 - \text{rate}}$ to keep the expected sum the same. <br>
+This forces the network not to rely on any single neuron, since any neuron might be absent on a given batch. It encourages more redundant, generalizable features and is an effective tool against overfitting (when models memorize the training data instead of learning from it). Dropout is disabled during testing so the full network is used for the acutal predictions.
+
+## ✂️Gradient Clipping
+Before each optimizer update, each layer's gradient norm is computed, and if it exceeds a threshold, the gradients are rescaled down proportionally:
+```python
+norm = sqrt(sum(dweights**2) + sum(dbiases**2))
+if norm > max_norm:
+    dweights *= max_norm / norm
+    dbiases  *= max_norm / norm
+```
+This caps out how large a single parameter update can be. It was key for the NSL-KDD dataset since without it, the Adam optimizer's first update on the large input space caused the loss to spike and the network to collapse into predicting a single class for every input.
+
+
 ## 🔁Traning Loop
-The training is done in 20 epochs. Each epoch shuffles the training data and splits the training data into batches of 256 samples (for a total of 234 batches per epoch). Then, for each batch, we run the forward pass, compute loss and accuracy, run the backward pass, and then call the optimizer to update weights. 
+The training is done in 20 epochs. Each epoch shuffles the training data and splits the training data into batches (256 for Fashion MNIST, 64 for NSL-KDD). Then, for each batch, we run the forward pass, compute loss and accuracy, run the backward pass, clip gradients, and then call the optimizer to update weights. 
 
 ## 🎯Results
+
+### Fashion MNIST
 ```text
 Epoch  1/20  loss: 1.3488  acc: 57.9% 
 Epoch  2/20  loss: 0.7752  acc: 74.6% 
@@ -116,6 +166,37 @@ Accuracy: 84.0% $$
 ```
 The network starts with a 57.9% accuracy and ends at 85.6% after training, and a test accuracy of 84.0%. For reference, a random baseline for a 10 class data set would be ~10% accuracy.
 
+### NSL-KDD
+```text
+Epoch  1/20  loss: 0.3589  acc: 89.0%
+Epoch  2/20  loss: 0.1887  acc: 95.3%
+Epoch  3/20  loss: 0.1612  acc: 95.8%
+Epoch  4/20  loss: 0.1432  acc: 96.2%
+Epoch  5/20  loss: 0.1345  acc: 96.3%
+Epoch  6/20  loss: 0.1296  acc: 96.5%
+Epoch  7/20  loss: 0.1229  acc: 96.6%
+Epoch  8/20  loss: 0.1219  acc: 96.7%
+Epoch  9/20  loss: 0.1181  acc: 96.8%
+Epoch 10/20  loss: 0.1169  acc: 96.7%
+Epoch 11/20  loss: 0.1149  acc: 96.8%
+Epoch 12/20  loss: 0.1148  acc: 96.8%
+Epoch 13/20  loss: 0.1128  acc: 96.8%
+Epoch 14/20  loss: 0.1111  acc: 96.8%
+Epoch 15/20  loss: 0.1094  acc: 96.9%
+Epoch 16/20  loss: 0.1079  acc: 97.0%
+Epoch 17/20  loss: 0.1082  acc: 96.9%
+Epoch 18/20  loss: 0.1068  acc: 97.0%
+Epoch 19/20  loss: 0.1067  acc: 96.9%
+Epoch 20/20  loss: 0.1043  acc: 97.0%
+ 
+── Test set evaluation ── <br>
+Loss:     1.3156 <br>
+Accuracy: 73.1%
+```
+
+Here, the network starts off at 89.0% accuracy and eventually reaches 97.0% training accuracy - much thanks to the addition of Leaky ReLU, Adam optimizer, gradient clipping, and regularization. The test accuracy of 73.1% is larger, but looking at the dataset gives us some insight as to why. r2l (remote-to-local exploit) can often look like normal activity when looking at features such as traffic colume, error rates, and connection counts - which are some of the features of this dataset. More interestingly, the u2r (user-to-root exploit) class only appears 67 times out of ~22,000 records in the training set. This low representation makes it hard for the monel to understand what characterizes u2r, and in turn hard for it to predict it. <br>
+
+
 References: <br>
 [https://github.com/zalandoresearch/fashion-mnist](https://github.com/zalandoresearch/fashion-mnist) <br>
 [https://towardsdatascience.com/kaiming-he-initialization-in-neural-networks-math-proof-73b9a0d845c4/](https://towardsdatascience.com/kaiming-he-initialization-in-neural-networks-math-proof-73b9a0d845c4/) <br>
@@ -123,3 +204,6 @@ References: <br>
 [https://www.geeksforgeeks.org/deep-learning/categorical-cross-entropy-in-multi-class-classification/](https://www.geeksforgeeks.org/deep-learning/categorical-cross-entropy-in-multi-class-classification/) <br>
 [https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/](https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/)<br>
 [https://github.com/Sentdex/nnfs](https://github.com/Sentdex/nnfs)<br>
+[https://github.com/jmnwong/NSL-KDD-Dataset](https://github.com/jmnwong/NSL-KDD-Dataset)<br>
+[https://www.kaggle.com/datasets/hassan06/nslkdd](https://www.kaggle.com/datasets/hassan06/nslkdd)<br>
+[https://medium.com/@LayanSA/complete-guide-to-adam-optimization-1e5f29532c3d](https://medium.com/@LayanSA/complete-guide-to-adam-optimization-1e5f29532c3d)<br>
