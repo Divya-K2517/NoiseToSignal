@@ -13,19 +13,19 @@ A completely connected neural network built using only NumPy and trained on the 
 Starting from random weights, the model reaches 85.3% training accuracy and 83.8% test accuracy on the Fashion MNIST dataset, and 93.4% training accuracy and 78.2% test accuracy on the NSL-KDD dataset.
 
 ## Table of Contents
-**Datasets** <br>
-**Network Architecture**<br>
-**Forward Pass**<br>
-**Loss Function**<br>
-**Backpropagation**<br>
-**Optimizer**<br>
-**Regularization** <br>
-**Gradient Clipping** <br>
-**Training Loop**<br>
-**Class Imbalance** <br>
-**Results**<br>
+**🗂️Datasets** <br>
+**🕸️Network Architecture**<br>
+**➡️Forward Pass**<br>
+**📉Loss Function**<br>
+**⬅️Backpropagation**<br>
+**🔨Optimizer**<br>
+**🛡️Regularization** <br>
+**✂️Gradient Clipping** <br>
+**⚖️Class Imbalance** <br>
+**🔁Training Loop**<br>
+**🎯Results**<br>
 
-## 👗 Dataset
+## 🗂️ Datasets
 The network was tested on two datasets: Fashion MNIST(a replacement for the classic MNIST handwritten digits), and NSL-KDD(an improved version of the KDD'99 set which categorizes network intrusions).
 
 ### Fashion MNIST
@@ -82,7 +82,7 @@ The *Softmax* activation function is applied to the output layer: $$Softmax(x) =
 Softmax activation prevents numerical overflow by subtracting the minimum value of a set of inputs(these inputs to the softmax function are the outputs of a whole layer) from all values in the set.
 
 
-## 📉 Loss
+## 📉Loss Function
 The network trains using *Categorical Cross-Entropy* loss:  $$\mathcal{L} = -\sum_{i} y_i \log(\hat{y}_i)$$ <br>
 
 Lets break this down: 
