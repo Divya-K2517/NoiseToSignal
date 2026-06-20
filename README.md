@@ -144,7 +144,7 @@ This caps out how large a single parameter update can be. It was key for the NSL
 
 ## ⚖️Class Imbalance
 The NSL-KDD dataset's class sizes are unbalanced, with normal and dos traffic making up a alrge portion of the training data while r2l and u2r make up 1-2% of the training data each. The loss straegy used here, categorical cross-entropy, minimizes the average loss across all samples. Initially this caused the model to just guess every r2l or u2r example wrong, and because they make up a small percentage of the data, they wouldn't change the average loss much. The model then ended up with 0% accuracy for both the r2l and u2r classes. <br>
-To combat this, class weighting was used. Each class was given an inverse-frequency weight: $ weight_c = \frac{totalSamples}{numClasses*count_c}$ <br>
+To combat this, class weighting was used. Each class was given an inverse-frequency weight: $weight_c = \frac{totalSamples}{numClasses*count_c}$ <br>
 This formula gives classes with fewer examples proportionally larger weights (capped at a max of 20), and vice versa. The weight is applied to the loss and to the backpropagated gradient itself. <br>
 The results were evident, with accuracies for r2l and u2r going from 0% for both to 34% and 33%, respectivly.
 
