@@ -281,3 +281,68 @@ def clip_gradients(layer, max_norm=5.0):
         scale = max_norm / norm
         layer.dweights *= scale
         layer.dbiases *= scale
+
+
+#save and load the model
+
+def save_model(layers, path, model_name="model", extra_meta=None):
+    arrays = {}
+ 
+    # store each layer's parameters
+    for i, layer in enumerate(layers):
+        arrays[f"layer_{i}_weights"] = layer.weights
+        arrays[f"layer_{i}_biases"]  = layer.biases
+ 
+    # store metadata so load_model knows how to reconstruct
+    arrays["num_layers"]   = np.array(len(layers), dtype=np.int32)
+    arrays["model_name"]   = np.array(model_name)            # 0-d string array
+    arrays["layer_shapes"] = np.array(
+        [(l.weights.shape[0], l.weights.shape[1]) for l in layers], dtype=np.int32
+    )   # shape: (num_layers, 2)  — each row is [n_inputs, n_neurons]
+ 
+    # optional metadata (accuracy, loss, epoch count, etc.)
+    if extra_meta:
+        for key, value in extra_meta.items():
+            arrays[f"meta_{key}"] = np.array(value)
+ 
+    np.savez(path, **arrays)
+    print(f"[save_model] saved {len(layers)} layer(s) → {path}.npz")
+    if extra_meta:
+        for k, v in extra_meta.items():
+            print(f"             {k}: {v}")
+
+def load_model(path):
+
+    #need allow_pickle to be true bc model_name is a 0-d object array
+    data = np.load(path, allow_pickle=True)
+ 
+    num_layers   = int(data["num_layers"])
+    model_name   = str(data["model_name"])
+    layer_shapes = data["layer_shapes"]   # shape (num_layers, 2)
+ 
+    layers = []
+    for i in range(num_layers):
+        n_inputs, n_neurons = int(layer_shapes[i, 0]), int(layer_shapes[i, 1])
+ 
+        # build a fresh layer
+        layer = Layer_Dense(n_inputs, n_neurons)
+        layer.weights = data[f"layer_{i}_weights"].astype(np.float32)
+        layer.biases  = data[f"layer_{i}_biases"].astype(np.float32)
+        layers.append(layer)
+ 
+    # collect metadata to hand back to the caller
+    meta = {
+        "model_name"  : model_name,
+        "num_layers"  : num_layers,
+        "layer_shapes": [(int(layer_shapes[i, 0]), int(layer_shapes[i, 1]))
+                         for i in range(num_layers)],
+    }
+    for key in data.files:
+        if key.startswith("meta_"):
+            meta[key] = data[key].item()   # .item() converts 0-d array → Python scalar
+ 
+    print(f"[load_model] loaded '{model_name}' — {num_layers} layer(s) from {path}")
+    for i, (ni, nn) in enumerate(meta["layer_shapes"]):
+        print(f"             layer {i}: ({ni} → {nn})")
+ 
+    return layers, meta

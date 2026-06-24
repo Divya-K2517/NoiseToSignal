@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import matplotlib
 import math
-from network import compute_accuracy, Layer_Dense, Layer_Dropout,Activation_ReLU, Activation_LeakyReLU, Activation_Softmax_Loss_CategoricalCrossentropy, Optimizer_SGD, clip_gradients, Activation_Softmax, Loss_CategoricalCrossentropy, Optimizer_Adam
+from network import compute_accuracy, save_model, Layer_Dense, Layer_Dropout,Activation_ReLU, Activation_LeakyReLU, Activation_Softmax_Loss_CategoricalCrossentropy, Optimizer_SGD, clip_gradients, Activation_Softmax, Loss_CategoricalCrossentropy, Optimizer_Adam
 import nnfs
 from nnfs.datasets import spiral_data
 import matplotlib
@@ -173,3 +173,9 @@ if __name__ == "__main__":
         test_loss=test_loss,
         save_path="fashion_mnist_confusion_matrix.png"
     )
+
+    save_model([dense1,dense2,dense3], 
+               "models/fashion_mnist",
+               model_name="fashion_mnist",
+               extra_meta={"accuracy": test_acc, "loss": float(test_loss), "epochs": epochs}
+               )
