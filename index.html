@@ -110,8 +110,8 @@
     touch-action: none;
     display: block;
     /* pixel-art style upscale of 28×28 */
-    width: 280px;
-    height: 280px;
+    width: 336px;
+    height: 336px;
     image-rendering: pixelated;
     border: 1px solid var(--border);
   }
@@ -369,21 +369,14 @@
 
 </div>
 
-<!-- weight loader -->
-<div class="load-row">
-  <input type="file" id="weightsFile" accept=".json" onchange="loadWeightsFromFile(event)">
-</div>
 <div class="status-bar">
   <div class="status-dot" id="statusDot"></div>
-  <span id="statusText">Load your weights JSON to activate the classifier (see instructions below)</span>
+  <span id="statusText">Loading model weights…</span>
 </div>
 
 <footer>
-  <strong style="color:var(--text-soft)">How to export your weights</strong><br>
-  Run this once after training in Python, then upload the JSON above:<br><br>
-  <code style="color:var(--accent2)">python export_weights.py</code>
-  &nbsp;→&nbsp; uploads <code>fashion_mnist_weights.json</code><br><br>
-  Source · <a href="https://github.com/zalandoresearch/fashion-mnist" target="_blank">Fashion-MNIST dataset</a>
+  Weights trained on <a href="https://github.com/zalandoresearch/fashion-mnist" target="_blank">Fashion-MNIST</a>
+  · Neural network built from scratch in NumPy · Runs entirely in your browser
 </footer>
 
 <script>
@@ -467,36 +460,36 @@ function forward(pixels) {
 }
 
 // ─────────────────────────────────────────────
-//  WEIGHT LOADING
+//  WEIGHT LOADING — auto-fetch from repo
 // ─────────────────────────────────────────────
-function loadWeightsFromFile(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  setStatus("loading", `Reading ${file.name}…`);
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      model = {
-        w1: new Float32Array(data.layer_0_weights.flat()),
-        b1: new Float32Array(data.layer_0_biases.flat()),
-        w2: new Float32Array(data.layer_1_weights.flat()),
-        b2: new Float32Array(data.layer_1_biases.flat()),
-        w3: new Float32Array(data.layer_2_weights.flat()),
-        b3: new Float32Array(data.layer_2_biases.flat()),
-      };
-      const acc = data.meta_accuracy != null
-        ? ` · trained accuracy ${(data.meta_accuracy * 100).toFixed(1)}%`
-        : "";
-      setStatus("ready", `Weights loaded (${data.model_name || "fashion_mnist"}${acc})`);
-      document.getElementById("predictBtn").disabled = false;
-      initBars();
-    } catch(err) {
-      setStatus("error", `Failed to parse weights: ${err.message}`);
-    }
-  };
-  reader.readAsText(file);
+const WEIGHTS_URL = "fashion_mnist_weights.json";
+
+async function autoLoadWeights() {
+  setStatus("loading", "Loading model weights…");
+  try {
+    const res = await fetch(WEIGHTS_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status} — make sure fashion_mnist_weights.json is in your repo root`);
+    const data = await res.json();
+    model = {
+      w1: new Float32Array(data.layer_0_weights.flat()),
+      b1: new Float32Array(data.layer_0_biases.flat()),
+      w2: new Float32Array(data.layer_1_weights.flat()),
+      b2: new Float32Array(data.layer_1_biases.flat()),
+      w3: new Float32Array(data.layer_2_weights.flat()),
+      b3: new Float32Array(data.layer_2_biases.flat()),
+    };
+    const acc = data.meta_accuracy != null
+      ? ` · accuracy ${(data.meta_accuracy * 100).toFixed(1)}%`
+      : "";
+    setStatus("ready", `Model ready${acc} — draw something and hit Predict`);
+    document.getElementById("predictBtn").disabled = false;
+    initBars();
+  } catch (err) {
+    setStatus("error", `Could not load weights: ${err.message}`);
+  }
 }
+
+window.addEventListener("load", autoLoadWeights);
 
 function setStatus(state, msg) {
   const dot  = document.getElementById("statusDot");
@@ -531,7 +524,7 @@ function canvasXY(e) {
 function drawAt(x, y) {
   ctx.fillStyle = "#fff";
   // draw a 2×2 brush at 28×28 scale (≈ fat pixel)
-  ctx.fillRect(x - 1, y - 1, 3, 3);
+  ctx.fillRect(x, y, 1, 1);
   hasMark = true;
 }
 
