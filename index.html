@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fashion Classifier — Draw & Predict</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d0d0f;
+    --surface:   #16161a;
+    --border:    #2a2a32;
+    --accent:    #9b5de5;
+    --accent2:   #f15bb5;
+    --dim:       #555566;
+    --text:      #e8e8f0;
+    --text-soft: #888899;
+    --mono:      'Space Mono', monospace;
+    --sans:      'Space Grotesk', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── header ── */
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  h1 span {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle {
+    margin-top: 12px;
+    color: var(--text-soft);
+    font-size: 15px;
+    font-weight: 300;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+  }
+
+  /* ── layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    width: 100%;
+    max-width: 820px;
+  }
+  @media (max-width: 620px) {
+    .app { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .panel-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  /* ── canvas ── */
+  .canvas-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  #drawCanvas {
+    border-radius: 8px;
+    cursor: crosshair;
+    touch-action: none;
+    display: block;
+    /* pixel-art style upscale of 28×28 */
+    width: 280px;
+    height: 280px;
+    image-rendering: pixelated;
+    border: 1px solid var(--border);
+  }
+  .canvas-hint {
+    font-size: 12px;
+    color: var(--dim);
+    font-family: var(--mono);
+    text-align: center;
+  }
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+  }
+  button {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  button:active { transform: scale(0.97); }
+  .btn-clear {
+    background: var(--border);
+    color: var(--text-soft);
+  }
+  .btn-clear:hover { opacity: 0.8; }
+  .btn-predict {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    flex: 1;
+  }
+  .btn-predict:hover { opacity: 0.88; }
+  .btn-predict:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── preview strip ── */
+  #previewStrip {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 4px;
+  }
+  .pixel-cell {
+    width: 8px; height: 8px;
+    border-radius: 1px;
+  }
+
+  /* ── results ── */
+  .results-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .top-prediction {
+    text-align: center;
+    padding: 20px 16px;
+    background: var(--bg);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    min-height: 88px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .top-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .top-class {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .top-conf {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-soft);
+    margin-top: 4px;
+  }
+  .placeholder-text {
+    color: var(--dim);
+    font-size: 13px;
+    font-family: var(--mono);
+    text-align: center;
+  }
+
+  /* ── bar chart ── */
+  .bar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 42px;
+    align-items: center;
+    gap: 8px;
+  }
+  .bar-name {
+    font-size: 12px;
+    color: var(--text-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bar-track {
+    background: var(--border);
+    border-radius: 3px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--dim);
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                background 0.2s;
+    width: 0%;
+  }
+  .bar-fill.top {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .bar-pct {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dim);
+    text-align: right;
+  }
+  .bar-pct.top { color: var(--accent); }
+
+  /* ── status / weight loader ── */
+  .status-bar {
+    width: 100%;
+    max-width: 820px;
+    margin-top: 24px;
+    padding: 12px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--dim);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .status-dot.ready { background: #4ade80; }
+  .status-dot.error { background: #f87171; }
+
+  .load-row {
+    width: 100%;
+    max-width: 820px;
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .load-row input[type=file] {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-soft);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    flex: 1;
+    cursor: pointer;
+  }
+  .load-row input[type=file]::file-selector-button {
+    background: var(--border);
+    border: none;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+
+  footer {
+    margin-top: 56px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dim);
+    text-align: center;
+    line-height: 1.8;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Neural Network · Built from scratch in NumPy</p>
+  <h1>Draw a <span>clothing item.</span></h1>
+  <p class="subtitle">
+    A fully-connected network (784 → 128 → 64 → 10) classifies your sketch
+    using weights trained on Fashion-MNIST — running entirely in your browser.
+  </p>
+</header>
+
+<div class="app">
+
+  <!-- left: canvas -->
+  <div class="panel">
+    <p class="panel-label">Your drawing</p>
+    <div class="canvas-wrap">
+      <canvas id="drawCanvas" width="28" height="28"></canvas>
+      <p class="canvas-hint">Draw on the canvas above</p>
+      <div class="btn-row">
+        <button class="btn-clear" onclick="clearCanvas()">Clear</button>
+        <button class="btn-predict" id="predictBtn" onclick="predict()" disabled>
+          Predict →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- right: results -->
+  <div class="panel results-panel">
+    <p class="panel-label">Prediction</p>
+
+    <div class="top-prediction" id="topPrediction">
+      <p class="placeholder-text">draw something &amp; hit predict</p>
+    </div>
+
+    <div class="bar-list" id="barList">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+</div>
+
+<!-- weight loader -->
+<div class="load-row">
+  <input type="file" id="weightsFile" accept=".json" onchange="loadWeightsFromFile(event)">
+</div>
+<div class="status-bar">
+  <div class="status-dot" id="statusDot"></div>
+  <span id="statusText">Load your weights JSON to activate the classifier (see instructions below)</span>
+</div>
+
+<footer>
+  <strong style="color:var(--text-soft)">How to export your weights</strong><br>
+  Run this once after training in Python, then upload the JSON above:<br><br>
+  <code style="color:var(--accent2)">python export_weights.py</code>
+  &nbsp;→&nbsp; uploads <code>fashion_mnist_weights.json</code><br><br>
+  Source · <a href="https://github.com/zalandoresearch/fashion-mnist" target="_blank">Fashion-MNIST dataset</a>
+</footer>
+
+<script>
+// ─────────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────────
+const CLASS_NAMES = [
+  "T-shirt/top","Trouser","Pullover","Dress","Coat",
+  "Sandal","Shirt","Sneaker","Bag","Ankle boot"
+];
+
+// Class → emoji for a bit of personality
+const CLASS_EMOJI = {
+  "T-shirt/top": "👕", "Trouser": "👖", "Pullover": "🧥",
+  "Dress": "👗",       "Coat": "🧣",    "Sandal": "👡",
+  "Shirt": "👔",       "Sneaker": "👟", "Bag": "👜",
+  "Ankle boot": "👢"
+};
+
+// ─────────────────────────────────────────────
+//  MODEL STATE
+// ─────────────────────────────────────────────
+let model = null; // { w1, b1, w2, b2, w3, b3 }
+
+// ─────────────────────────────────────────────
+//  MATH UTILS  (pure JS, mirrors network.py)
+// ─────────────────────────────────────────────
+
+// Matrix multiply: A (m×k) · B (k×n) → (m×n)
+function matmul(A, B, m, k, n) {
+  const C = new Float32Array(m * n);
+  for (let i = 0; i < m; i++)
+    for (let j = 0; j < n; j++) {
+      let sum = 0;
+      for (let p = 0; p < k; p++) sum += A[i*k + p] * B[p*n + j];
+      C[i*n + j] = sum;
+    }
+  return C;
+}
+
+// Add bias row to every row of X (1 sample → trivial)
+function addBias(X, b, n) {
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) out[i] = X[i] + b[i];
+  return out;
+}
+
+function relu(x) {
+  const out = new Float32Array(x.length);
+  for (let i = 0; i < x.length; i++) out[i] = Math.max(0, x[i]);
+  return out;
+}
+
+function softmax(x) {
+  const max = Math.max(...x);
+  const exp = x.map(v => Math.exp(v - max));
+  const sum = exp.reduce((a,b) => a+b, 0);
+  return exp.map(v => v / sum);
+}
+
+// Forward pass — mirrors Fashion-MNIST.py exactly
+function forward(pixels) {
+  // pixels: Float32Array of length 784, values in [0, 1]
+  const { w1, b1, w2, b2, w3, b3 } = model;
+
+  // layer 1: 784 → 128
+  let z1 = matmul(pixels, w1, 1, 784, 128);
+  z1 = addBias(z1, b1, 128);
+  const a1 = relu(z1);
+
+  // layer 2: 128 → 64
+  let z2 = matmul(a1, w2, 1, 128, 64);
+  z2 = addBias(z2, b2, 64);
+  const a2 = relu(z2);
+
+  // layer 3: 64 → 10
+  let z3 = matmul(a2, w3, 1, 64, 10);
+  z3 = addBias(z3, b3, 10);
+
+  return softmax(Array.from(z3));
+}
+
+// ─────────────────────────────────────────────
+//  WEIGHT LOADING
+// ─────────────────────────────────────────────
+function loadWeightsFromFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  setStatus("loading", `Reading ${file.name}…`);
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      model = {
+        w1: new Float32Array(data.layer_0_weights.flat()),
+        b1: new Float32Array(data.layer_0_biases.flat()),
+        w2: new Float32Array(data.layer_1_weights.flat()),
+        b2: new Float32Array(data.layer_1_biases.flat()),
+        w3: new Float32Array(data.layer_2_weights.flat()),
+        b3: new Float32Array(data.layer_2_biases.flat()),
+      };
+      const acc = data.meta_accuracy != null
+        ? ` · trained accuracy ${(data.meta_accuracy * 100).toFixed(1)}%`
+        : "";
+      setStatus("ready", `Weights loaded (${data.model_name || "fashion_mnist"}${acc})`);
+      document.getElementById("predictBtn").disabled = false;
+      initBars();
+    } catch(err) {
+      setStatus("error", `Failed to parse weights: ${err.message}`);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function setStatus(state, msg) {
+  const dot  = document.getElementById("statusDot");
+  const text = document.getElementById("statusText");
+  dot.className = "status-dot" + (state === "ready" ? " ready" : state === "error" ? " error" : "");
+  text.textContent = msg;
+}
+
+// ─────────────────────────────────────────────
+//  CANVAS DRAWING
+// ─────────────────────────────────────────────
+const canvas  = document.getElementById("drawCanvas");
+const ctx     = canvas.getContext("2d");
+let drawing   = false;
+let hasMark   = false;
+
+// fill black background
+ctx.fillStyle = "#000";
+ctx.fillRect(0, 0, 28, 28);
+
+function canvasXY(e) {
+  const rect   = canvas.getBoundingClientRect();
+  const scaleX = 28 / rect.width;
+  const scaleY = 28 / rect.height;
+  const src    = e.touches ? e.touches[0] : e;
+  return [
+    Math.floor((src.clientX - rect.left) * scaleX),
+    Math.floor((src.clientY - rect.top)  * scaleY)
+  ];
+}
+
+function drawAt(x, y) {
+  ctx.fillStyle = "#fff";
+  // draw a 2×2 brush at 28×28 scale (≈ fat pixel)
+  ctx.fillRect(x - 1, y - 1, 3, 3);
+  hasMark = true;
+}
+
+canvas.addEventListener("pointerdown", e => { drawing = true; drawAt(...canvasXY(e)); });
+canvas.addEventListener("pointermove", e => { if (drawing) drawAt(...canvasXY(e)); });
+canvas.addEventListener("pointerup",   () => drawing = false);
+canvas.addEventListener("pointerleave",() => drawing = false);
+
+function clearCanvas() {
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, 28, 28);
+  hasMark = false;
+  resetResults();
+}
+
+// ─────────────────────────────────────────────
+//  PREDICT
+// ─────────────────────────────────────────────
+function getPixels() {
+  const imageData = ctx.getImageData(0, 0, 28, 28);
+  const pixels    = new Float32Array(784);
+  for (let i = 0; i < 784; i++) {
+    // grayscale from R channel (canvas is drawn in white on black)
+    pixels[i] = imageData.data[i * 4] / 255.0;
+  }
+  return pixels;
+}
+
+function predict() {
+  if (!model) { setStatus("error", "No weights loaded yet."); return; }
+
+  const pixels = getPixels();
+  const probs  = forward(pixels);
+
+  // sort by confidence
+  const ranked = probs
+    .map((p, i) => ({ i, p }))
+    .sort((a, b) => b.p - a.p);
+
+  const best = ranked[0];
+  showTopPrediction(CLASS_NAMES[best.i], best.p);
+  updateBars(probs, best.i);
+}
+
+function showTopPrediction(name, conf) {
+  const el = document.getElementById("topPrediction");
+  const emoji = CLASS_EMOJI[name] || "";
+  el.innerHTML = `
+    <p class="top-label">I think it's</p>
+    <p class="top-class">${emoji} ${name}</p>
+    <p class="top-conf">${(conf * 100).toFixed(1)}% confidence</p>
+  `;
+}
+
+function resetResults() {
+  document.getElementById("topPrediction").innerHTML =
+    `<p class="placeholder-text">draw something &amp; hit predict</p>`;
+  document.querySelectorAll(".bar-fill").forEach(b => {
+    b.style.width = "0%";
+    b.classList.remove("top");
+  });
+  document.querySelectorAll(".bar-pct").forEach(p => {
+    p.textContent = "";
+    p.classList.remove("top");
+  });
+}
+
+// ─────────────────────────────────────────────
+//  BAR CHART
+// ─────────────────────────────────────────────
+function initBars() {
+  const list = document.getElementById("barList");
+  list.innerHTML = "";
+  CLASS_NAMES.forEach((name, i) => {
+    const row = document.createElement("div");
+    row.className = "bar-row";
+    row.innerHTML = `
+      <span class="bar-name">${name}</span>
+      <div class="bar-track"><div class="bar-fill" id="bar-${i}"></div></div>
+      <span class="bar-pct" id="pct-${i}"></span>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function updateBars(probs, topIdx) {
+  probs.forEach((p, i) => {
+    const fill = document.getElementById(`bar-${i}`);
+    const pct  = document.getElementById(`pct-${i}`);
+    if (!fill) return;
+    fill.style.width = `${(p * 100).toFixed(1)}%`;
+    fill.classList.toggle("top", i === topIdx);
+    pct.textContent  = `${(p * 100).toFixed(1)}%`;
+    pct.classList.toggle("top", i === topIdx);
+  });
+}
+</script>
+</body>
+</html>

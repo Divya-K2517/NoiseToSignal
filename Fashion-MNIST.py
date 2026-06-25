@@ -175,7 +175,7 @@ if __name__ == "__main__":
     )
 
     save_model([dense1,dense2,dense3], 
-               "models/fashion_mnist",
+               "saved_model_results/fashion_mnist",
                model_name="fashion_mnist",
                extra_meta={"accuracy": test_acc, "loss": float(test_loss), "epochs": epochs}
                )
